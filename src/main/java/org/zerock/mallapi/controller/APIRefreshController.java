@@ -1,5 +1,6 @@
 package org.zerock.mallapi.controller;
 
+import java.text.SimpleDateFormat;
 import java.util.Map;
 
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -51,13 +52,20 @@ public class APIRefreshController {
 
     // 시간이 1시간 미만으로 남았다면
     private boolean checkTime(Integer exp){
-        
+
         //JWT exp를 날짜로 변환
-        java.util.Date expDate = new java.util.Date( (long) (exp * 1000));
+        java.util.Date expDate = new java.util.Date( (long) exp * (1000));
+
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String formatteDate =   dateFormat.format(expDate);
+        
+        log.info("토큰 만료 예정 시각: " + formatteDate);
 
         //현재 시간과의 차이 계산
         long gap = expDate.getTime() - System.currentTimeMillis();
-
+        
+        
         //분단위 계산
         long leftMin = gap / (1000 * 60);
 
