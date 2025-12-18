@@ -27,12 +27,14 @@ public class APIRefreshController {
         if(authHeader == null){
             throw new CustomJWTException("INVALID_STRING");
         }
-
+        
+        //accessToken 추출
         String accessToken = authHeader.substring(7);
 
-        //Access Token이 만료되지 않았다면
+        //Access Token이 만료되지 않은 경우,
         if(checkExpiredToken(accessToken) ==false){
-            return Map.of("accessToken", accessToken, "refreshToken", refreshToken);
+            
+            return Map.of("accessToken", accessToken, "refreshToken", refreshToken);    
         }
 
         // Refresh Token 검증
@@ -42,8 +44,14 @@ public class APIRefreshController {
 
         String newAccessToken = JWTUtil.generateToken(claims, 10);
 
+        // 새로 발급된 accessToken 만료 예정
+        Map<String, Object> newClaims = JWTUtil.vailedToken(newAccessToken);
+        Integer newExp = (Integer) newClaims.get("exp");
+         
+        java.util.Date newExpDate = new java.util.Date(newExp * 1000L);
         log.info("exp ; " + claims.get("exp"));
 
+        // reFreshTorkenn이 만료된 경우, refresh Token을 생성하고, 아닌경우 기존의 refreshToken을 출력한다.
         String newRefreshToken = checkTime((Integer) claims.get("exp")) == true ? JWTUtil.generateToken(claims, 60*24) : refreshToken ;
 
         return Map.of("accessToken", newAccessToken, "refreshToken", newRefreshToken);
@@ -54,13 +62,13 @@ public class APIRefreshController {
     private boolean checkTime(Integer exp){
 
         //JWT exp를 날짜로 변환
-        java.util.Date expDate = new java.util.Date( (long) exp * (1000));
+        java.util.Date expDate = new java.util.Date( exp * 1000L);
 
-
+        // reFreshToken 만료시간 확인
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String formatteDate =   dateFormat.format(expDate);
         
-        log.info("토큰 만료 예정 시각: " + formatteDate);
+        log.info("reFreshToken 토큰 만료 예정 시각: " + formatteDate);
 
         //현재 시간과의 차이 계산
         long gap = expDate.getTime() - System.currentTimeMillis();
@@ -79,8 +87,9 @@ public class APIRefreshController {
         try {
         JWTUtil.vailedToken(token);
         } catch (Exception ex) {
-            if(ex.getMessage().equals("Expired"));
-            return true;
+            if(ex.getMessage().equals("Expired")){
+                return true;
+            }
         }
             return false;
     }
