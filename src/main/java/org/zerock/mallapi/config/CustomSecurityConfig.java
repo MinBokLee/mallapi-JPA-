@@ -1,13 +1,18 @@
 package org.zerock.mallapi.config;
 
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.zerock.mallapi.security.filter.JWTCheckFilter;
+import org.zerock.mallapi.security.handler.APILoginFailHandler;
+import org.zerock.mallapi.security.handler.APILoginSuccessHandler;
+import org.zerock.mallapi.security.handler.CustomAccessDeniedHandler;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import java.util.Arrays;
@@ -22,6 +27,7 @@ import lombok.extern.log4j.Log4j2;
 @Configuration
 @Log4j2
 @RequiredArgsConstructor
+@EnableMethodSecurity //메서드별 권한을 체크하기 위해 추가.
 public class CustomSecurityConfig {
 
     @Bean 
@@ -42,8 +48,18 @@ public class CustomSecurityConfig {
 
         http.formLogin(config -> {
             config.loginPage("/api/member/login");
+            config.successHandler(new APILoginSuccessHandler());
+            config.failureHandler(new APILoginFailHandler());
         });
+        
         //formLogin 설정을 추가하면 스프링시큐리티는 POST방식으로 username과 password라는 파라미터를 통해서 로그인을 처리할 수 있게 된다.
+
+        http.addFilterBefore(new JWTCheckFilter(),
+        UsernamePasswordAuthenticationFilter.class); //JWT 체크
+
+        http.exceptionHandling(config -> {
+            config.accessDeniedHandler(new CustomAccessDeniedHandler());
+        });
 
         return http.build();
 

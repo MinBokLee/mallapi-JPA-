@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -61,7 +62,8 @@ public class ProductController {
         log.info("fileName:    "+ fileName);
         return fileUtil.getFile(fileName);
     }
-        
+    
+    @PreAuthorize("hasAnyRole('ROLE_USER','ROLE_ADMIN')")
     @GetMapping("/list")
     public PageResponseDTO<ProductDTO> list(PageRequestDTO pageRequestDTO) {
         log.info("list................." + pageRequestDTO);
@@ -131,3 +133,6 @@ public class ProductController {
         return Map.of("RESULT","SUCCESS");
     }
 }
+
+// JWTCheckFilter에서는 JWT 인증 정보를 활용해서 사용자를 구성하고 이를 security에 지정해 주어야 한다.
+// JWT 토큰 내에는 인증에 필요한 모든 정보를 가지고 있기 때문에 이를 활용해서 시큐리티에 필요한 객체(MemberDTO)를 구성한다.
